@@ -1,0 +1,15 @@
+Test-cases:
+Correct;
+if16b502\nif16b503\nTestnachricht\n1.Zeile\n2.Zeile\n.\n
+
+Incorrect Sender:
+if16b50222\nif16b503\nTestnachricht\n1.Zeile\n2.Zeile\n.\n
+
+Incorrect Receiver:
+if16b502\nif16b50003\nTestnachricht\n1.Zeile\n2.Zeile\n.\n
+
+No \n:
+if16b502if16b503texttextnachricht
+
+No \n.\n:
+if16b502\nif16b503\nTestnachricht\n1.Zeile\n2.Zeile\n

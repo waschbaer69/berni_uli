@@ -1,0 +1,8 @@
+Compile:
+Client:
+gcc main.c ../Wrapper/wrapper.c ../Wrapper/wrapper.h -o main
+
+Server: gcc main.c ../Wrapper/wrapper.c ../Wrapper/wrapper.h ./server_functions.c ./server_functions.h -o main
+
+Run:
+./main im Server bzw ./main 127.0.0.1 6543 im Client
