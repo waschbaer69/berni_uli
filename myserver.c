@@ -47,7 +47,7 @@ void receiveMessage(int socket, char* buffer)
 }
 
 /* Schaut ob der Input des Client die richtige Größe hat und sendet in diesem Fall "OK"*/
-void getAndCheckClientInput(int socket, char* buffer, int maxsize)
+void getAndCheckClientInput(char* string, int socket, char* buffer, int maxsize)
 {
 	do
 	{
@@ -55,6 +55,8 @@ void getAndCheckClientInput(int socket, char* buffer, int maxsize)
 		if(checkLength(buffer,maxsize) != 0) sendMessage(socket, buffer, "ERR\n");
 		else
 		{
+			string = strcpy(string,buffer);
+			string = strcat(string,"\n");
 			sendMessage(socket, buffer, "OK\n");
 		}
 	}
@@ -64,14 +66,15 @@ void getAndCheckClientInput(int socket, char* buffer, int maxsize)
 /* Protokoll für SEND-Modus mit Error-Prevention */
 void sendProtocol(int socket, char *buffer, char* directory)
 {
-	char* sender;
+	char sender[9]; char receiver[9]; char subject[81];
+
 	printf("SEND:\n");
 	printf("=============================================================\n");
   sendMessage(socket,buffer,"OK-SEND\n");
 
-	getAndCheckClientInput(socket,buffer,8); // Sender
-	getAndCheckClientInput(socket,buffer,8); // Receiver
-	getAndCheckClientInput(socket,buffer,80); // Subject
+	getAndCheckClientInput(sender,socket,buffer,8); // Sender
+	getAndCheckClientInput(receiver,socket,buffer,8); // Receiver
+	getAndCheckClientInput(subject,socket,buffer,80); // Subject
 
 	/* Für den Inhalt wird solange eine Nachricht empfangen bis diese nurmehr ein Punkt ist.
 		 Außerdem wird ein dynamischer String erstellt in dem der Inhalt gespeichert wird */
@@ -92,10 +95,16 @@ void sendProtocol(int socket, char *buffer, char* directory)
 		count++;
 	};
 
-	printf("content: %s", content);
+
+	char * all;
+	all = malloc(strlen(sender)+strlen(content)+1);
+	all = strncpy(all,sender,strlen(sender)-1);
+	all = strcat(all,content);
+
+	printf("content: %s", all);
 
 	free(content);
-	free(sender);
+	free(all);
 	printf("=============================================================\n");
 }
 
