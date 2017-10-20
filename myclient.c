@@ -42,7 +42,7 @@ void sendTillOK(int socket, char* buffer, char* text)
 void sendProtocol(int socket, char *buffer)
 {
   printf("SEND:\n");
-	printf("=============================================================\n");
+  printf("=============================================================\n");
   sendTillOK(socket, buffer, "Sender");
   sendTillOK(socket, buffer, "Receiver");
   sendTillOK(socket, buffer, "Subject");
@@ -52,6 +52,17 @@ void sendProtocol(int socket, char *buffer)
   {
     sendMessage(socket,buffer);
   }
+  printf("=============================================================\n");
+}
+
+void readProtocol(int socket, char *buffer)
+{
+  printf("SEND:\n");
+  printf("=============================================================\n");
+  sendTillOK(socket, buffer, "Username");
+  printf("Message-Number:");
+  sendMessage(socket,buffer);
+  receiveMessage(socket,buffer);
   printf("=============================================================\n");
 }
 
@@ -102,6 +113,10 @@ int main (int argc, char **argv) {
     if(strcmp(buffer,"OK-SEND\n") == 0)
     {
       sendProtocol(create_socket,buffer);
+    }
+    else if(strcmp(buffer,"OK-READ\n") == 0)
+    {
+      readProtocol(create_socket,buffer);
     }
 
   }
