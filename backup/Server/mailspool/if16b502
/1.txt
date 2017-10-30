@@ -1,8 +1,0 @@
-if16b555
-if16b502
-Testnachricht
-Das ist eine Testnachricht
-mit mehreren Zeilen.
-und noch mehr Zeilen.
-Ananas
-.

@@ -1,7 +1,0 @@
-if16b502
-if16b550
-Testnachricht
-asdfsd
-sdfsdf
-sdf
-.
