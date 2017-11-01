@@ -31,6 +31,7 @@ private:
     int error(const char* message);
 
     int receive_message(int socket,char* buffer);
+    void recv_file(int sock, char* buffer);
     void server_send();
     void server_list();
     void server_read();

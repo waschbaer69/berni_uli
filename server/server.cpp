@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <fcntl.h> /* open, O_RDONLY */
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -154,6 +155,37 @@ void server::wait_for_request(){
 
 }
 
+void server::recv_file(int client_socket, char* buffer)
+{
+  int file_size;
+  FILE *received_file;
+  ssize_t len;
+  int remain_data = 0;
+
+  /* Receiving file size */
+  recv(client_socket, buffer, BUF, 0);
+  file_size = atoi(buffer);
+  printf("File size : %d\n", file_size);
+
+  received_file = fopen("hallo.jpg", "w");
+  if (received_file == NULL)
+  {
+          fprintf(stderr, "Failed to open file foo --> %s\n", strerror(errno));
+          exit(EXIT_FAILURE);
+  }
+
+  remain_data = file_size;
+
+  while (((len = recv(client_socket, buffer, BUF, 0)) > 0) && (remain_data > 0))
+  {
+          fwrite(buffer, sizeof(char), len, received_file);
+          remain_data -= len;
+          fprintf(stdout, "Receive %d bytes and we hope :- %d bytes\n", (int) len, remain_data);
+  }
+  fclose(received_file);
+}
+
+
 void server::server_send(){
     //Senden einer Nachricht vom Client zum Server.
     //read the received buffer and create a message for it
@@ -171,8 +203,9 @@ void server::server_send(){
         writen(client_socket_fd,response,strlen(response));
         //if everythings ok, save the message
         save_message(m);
-
+        recv_file(client_socket_fd,buffer);
     }
+    //
 
 }
 

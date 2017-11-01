@@ -28,7 +28,7 @@ message::message(string completeMessage) {
     getline(messageStream,reciever);
 
     getline(messageStream,subject);
-    
+
     while(getline(messageStream,str)){
         content=content+str+"\n";
     }
