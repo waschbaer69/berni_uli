@@ -1,0 +1,8 @@
+Sender:Test
+Receiver:asdf
+Subject:Hallo
+Message Content:
+asdfsdfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+sdfsssssssssssssssssssssssssssssss
+sdfffffffffffffffffffffff
+.

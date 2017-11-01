@@ -1,5 +1,4 @@
 // server.cpp
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -77,17 +76,17 @@ server::~server(){
     close (server_socket_fd);
 }
 
-void server::send_message(int socket, string message)
-{
-  strcpy(buffer,message.c_str());
-  send(socket, buffer, strlen(buffer),0);
-}
-
-
 int server::error(const char* message){
         //displays an error message
         perror(message);
         return EXIT_FAILURE;
+}
+
+int server::receive_message(int socket, char* recv_buffer)
+{
+  int size_msg = recv (socket, recv_buffer, BUF-1, 0);
+  if(size_msg>0) recv_buffer[size_msg]='\0';
+  return size_msg;
 }
 
 void server::wait_for_connection(){
@@ -114,7 +113,7 @@ void server::wait_for_connection(){
 void server::wait_for_request(){
     //wait for the clients request and deal with it accordingly
     while(1) {
-        size = recv (client_socket_fd, buffer, BUF-1, 0);
+        size = receive_message(client_socket_fd,buffer);
             if(strncmp (buffer, "SEND", 4)  == 0)
             {
                 server_send();
@@ -158,7 +157,6 @@ void server::wait_for_request(){
 void server::server_send(){
     //Senden einer Nachricht vom Client zum Server.
     //read the received buffer and create a message for it
-    buffer[size] = '\0';
     string mes = buffer;
     message m(mes);
     //check if there's an error (no sender/reciever, char limit broken)
@@ -182,7 +180,6 @@ void server::server_list(){
     //Auflisten der Nachrichten eines Users.
 
     //scan the received buffer and extract the username from it
-    buffer[size] = '\0';
     string name = buffer;
     stringstream strs;
     strs << name;
@@ -232,7 +229,6 @@ void server::server_read(){
     //Anzeigen einer bestimmten Nachricht für einen User.
 
     //scan the received buffer and extract the username and message-number from it
-    buffer[size] = '\0';
     string name = buffer;
     stringstream strs;
     string string_number;
@@ -284,7 +280,6 @@ void server::server_del(){
     //Löschen einer Nachricht eines Users.
 
     //scan the received buffer and extract the username and message-number from it
-    buffer[size] = '\0';
     string name = buffer;
     stringstream strs;
     string string_number;

@@ -30,7 +30,7 @@ private:
     /* methods */
     int error(const char* message);
 
-    void send_message(int socket, string message);
+    int receive_message(int socket,char* buffer);
     void server_send();
     void server_list();
     void server_read();
