@@ -31,14 +31,14 @@ private:
     int error(const char* message);
 
     int receive_message(int socket,char* buffer);
-    void recv_file(int sock, char* buffer);
+    int recv_file(int sock, char* buffer, string user, string filename);
     void server_send();
     void server_list();
     void server_read();
     void server_del();
     void server_quit();
 
-    void save_message(message m);
+    void save_message(string now, message m);
     std::vector<message> get_spool(std::string path_to_userdir);
 
     ssize_t writen (int fd, const char *vptr, size_t n);
