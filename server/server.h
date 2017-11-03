@@ -32,6 +32,9 @@ private:
 
     int receive_message(int socket,char* buffer);
     int recv_file(int sock, char* buffer, string user, string filename);
+    string find_user(string id);
+    int login_user(string dn, string pwd);
+    void server_login();
     void server_send();
     void server_list();
     void server_read();

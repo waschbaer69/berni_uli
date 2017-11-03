@@ -151,7 +151,22 @@ int main (int argc, char **argv) {
     string command;
     getline(cin,command);
 
-    if(command == "SEND"){
+    if(command == "LOGIN")
+    {
+      string str_request, uid, pwd;
+      char request[1024];
+      printf("UID: ");
+      getline(cin,uid);
+      char* password = getpass("Password: "); //do not show input
+      pwd = password; //convert to string
+      str_request = "LOGIN\n"+uid+"\n"+pwd+"\n";
+      send_message(server_socket_fd,request,str_request.c_str());
+
+      /* get OK or ERR back */
+      receive_message(server_socket_fd,response);
+      printf("%s",response);
+    }
+    else if(command == "SEND"){
       //read the message
       string string_request,sender,rec,subject,content,attachement_str,str;
       string_request = "";
@@ -177,9 +192,7 @@ int main (int argc, char **argv) {
       //strcpy(request, string_request.c_str());
       //send(server_socket_fd, request, strlen(request), 0);
       send_message(server_socket_fd,request,string_request.c_str());
-
-
-
+      
       char attachement[BUF];
       strcpy(attachement,attachement_str.c_str());
       /* send file here */
@@ -190,8 +203,6 @@ int main (int argc, char **argv) {
       //response[size]= '\0';
       receive_message(server_socket_fd,response);
       printf("%s",response);
-
-
     }
     else if (command == "LIST"){
 

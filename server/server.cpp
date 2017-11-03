@@ -19,8 +19,18 @@
 #include <cstring>
 #include <fstream>
 #include <chrono>
+#include <ldap.h>
 
 #define BUF 1024
+#define LDAP_HOST "ldap.technikum-wien.at"
+#define LDAP_PORT 389
+#define FILTER "(uid=if16b502)"
+#define SEARCHBASE "dc=technikum-wien,dc=at"
+#define SCOPE LDAP_SCOPE_SUBTREE
+/* anonymous bind with user and pw NULL (you must be connected to fh-network),
+else enter your credentials here*/
+#define BIND_USER NULL //"uid=if16b502,ou=people,dc=technikum-wien,dc=at"
+#define BIND_PW NULL // "pwd"
 
 #include "server.h"
 #include "../message/message.h"
@@ -116,6 +126,10 @@ void server::wait_for_request(){
   //wait for the clients request and deal with it accordingly
   while(1) {
     size = receive_message(client_socket_fd,buffer);
+    if(strncmp (buffer,"LOGIN", 5) == 0)
+    {
+      server_login();
+    }
     if(strncmp (buffer, "SEND", 4)  == 0)
     {
       server_send();
@@ -153,6 +167,154 @@ void server::wait_for_request(){
   }
 
   close (client_socket_fd);
+
+}
+
+string server::find_user(string id)
+{
+  string filter_str = "(uid=" + id + ")";
+  printf("%s\n",filter_str.c_str());
+  string user_dn;
+  LDAP *ld;			/* LDAP resource handle */
+  LDAPMessage *result, *e;	/* LDAP result handle */
+
+
+  int rc=0;
+
+  char *attribs[3];		/* attribute array for search */
+
+  attribs[0]=strdup("uid");		/* return uid and cn of entries */
+  attribs[1]=strdup("cn");
+  attribs[2]=NULL;		/* array must be NULL terminated */
+
+  /* setup LDAP connection */
+  if ((ld=ldap_init(LDAP_HOST, LDAP_PORT)) == NULL)
+  {
+    perror("ldap_init failed");
+    user_dn = "ERR";
+  }
+
+  //printf("connected to LDAP server %s on port %d\n",LDAP_HOST,LDAP_PORT);
+
+  /* anonymous bind */
+  rc = ldap_simple_bind_s(ld,BIND_USER,BIND_PW);
+
+  if (rc != LDAP_SUCCESS)
+  {
+    fprintf(stderr,"LDAP error: %s\n",ldap_err2string(rc));
+    user_dn = "ERR";
+  }
+  else
+  {
+    //printf("bind successful\n");
+  }
+
+  /* perform ldap search */
+  rc = ldap_search_s(ld, SEARCHBASE, SCOPE, filter_str.c_str(), attribs, 0, &result);
+
+  if (rc != LDAP_SUCCESS)
+  {
+    fprintf(stderr,"LDAP search error: %s\n",ldap_err2string(rc));
+    user_dn = "ERR";
+  }
+
+  //printf("Total results: %d\n", ldap_count_entries(ld, result));
+
+  if(ldap_count_entries(ld, result) == 1)
+  {
+    /* get user DN */
+    for (e = ldap_first_entry(ld, result); e != NULL; e = ldap_next_entry(ld,e))
+    {
+      //printf("DN: %s\n", ldap_get_dn(ld,e));
+      user_dn = ldap_get_dn(ld,e);
+      //printf("\n");
+    }
+  }
+  else
+  {
+    user_dn = "ERR";
+  }
+
+  /* free memory used for result */
+  ldap_msgfree(result);
+  free(attribs[0]);
+  free(attribs[1]);
+  //printf("LDAP search suceeded\n");
+
+  ldap_unbind(ld);
+
+  return user_dn;
+}
+
+int server::login_user(string dn, string pwd)
+{
+  LDAP *ld;			/* LDAP resource handle */
+  int rc=0;
+  int success = 1;
+
+
+  /* setup LDAP connection */
+  if ((ld=ldap_init(LDAP_HOST, LDAP_PORT)) == NULL)
+  {
+    perror("ldap_init failed");
+    success = 0;
+  }
+
+  //printf("connected to LDAP server %s on port %d\n",LDAP_HOST,LDAP_PORT);
+
+  /* anonymous bind */
+  rc = ldap_simple_bind_s(ld,dn.c_str(),pwd.c_str());
+
+  if (rc != LDAP_SUCCESS)
+  {
+    fprintf(stderr,"LDAP error: %s\n",ldap_err2string(rc));
+    success = 0;
+  }
+  else
+  {
+    printf("User could be logged in\n");
+  }
+
+  ldap_unbind(ld);
+  return success;
+
+}
+
+void server::server_login()
+{
+  string uid,pwd;
+
+  string msg = buffer;
+  stringstream strs;
+  strs << msg;
+  getline(strs,msg); //"LOGIN"
+  getline(strs,uid); //uid
+  getline(strs,pwd); //pwd
+
+  printf("%s\n",uid.c_str());
+  printf("%s\n",pwd.c_str());
+  string dn = find_user(uid).c_str();
+
+  if(dn.compare("ERR") != 0)
+  {
+    printf("Found User: %s\n",dn.c_str());
+    int isValid = login_user(dn,pwd);
+    if(isValid == 1)
+    {
+      char response[] = "OK\n\0";
+      writen(client_socket_fd,response,strlen(response));
+    }
+    else
+    {
+      char response[] = "ERR\n\0";
+      writen(client_socket_fd,response,strlen(response));
+    }
+  }
+  else
+  {
+    char response[] = "ERR\n\0";
+    writen(client_socket_fd,response,strlen(response));
+  }
 
 }
 
