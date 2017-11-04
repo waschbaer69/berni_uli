@@ -1,6 +1,0 @@
-Sender:if16b555
-Receiver:if16b502
-Subject:Uli
-Message Content:
-blabla
-aasdf

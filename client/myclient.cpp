@@ -14,6 +14,7 @@
 #include <iostream>
 #include <sstream>
 #include <sys/sendfile.h>
+#include <pthread.h>
 
 #define BUF 1024
 
@@ -192,7 +193,7 @@ int main (int argc, char **argv) {
       //strcpy(request, string_request.c_str());
       //send(server_socket_fd, request, strlen(request), 0);
       send_message(server_socket_fd,request,string_request.c_str());
-      
+
       char attachement[BUF];
       strcpy(attachement,attachement_str.c_str());
       /* send file here */
@@ -253,6 +254,8 @@ int main (int argc, char **argv) {
       //read the username and number
       string string_request,num;
       char request[1024];
+
+
       printf("Username: ");
       getline(cin,string_request);
       printf("Message-Number: ");

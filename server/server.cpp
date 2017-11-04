@@ -20,7 +20,7 @@
 #include <fstream>
 #include <chrono>
 #include <ldap.h>
-#include <thread>
+#include <pthread.h>
 
 #define BUF 1024
 #define LDAP_HOST "ldap.technikum-wien.at"
@@ -37,12 +37,15 @@ else enter your credentials here*/
 #include "../message/message.h"
 
 using namespace std;
+//pthread_mutex_t mutex;
 
 /* constructor */
 server::server(int client_socket,struct sockaddr_in addr, string directory_path_string){
 
   client_socket_fd = client_socket;
   cliaddress = addr;
+
+  //pthread_mutex_init (&mutex, NULL);
 
   directory_path = directory_path_string;
   if (directory_path.back() != '/')
@@ -350,13 +353,30 @@ void server::server_send(){
 
   }else{
 
-    //if everythings ok, save the message
+
+
+    // If Thread 1 sets the mutex and wants to create a file name, all other threads can't access variable "now"
+    // -> the filename will always be unique
+    //pthread_mutex_lock (&mutex);
+    /*
+    if (pthread_mutex_trylock(&mutex) == 0)
+    {
+      printf("Mutex got locked\n");
+    }
+    else
+    {
+      printf("This thread doesn't own the lock\n");
+      /// Fail!  This thread doesn't own the lock.  Do something else...
+    } */
+    fprintf(stdout, "thread:%ld\n",pthread_self());
     long long int now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
     string file_name = to_string(now)+"_"+"atm"+"_"+m.get_attachement();
+    //pthread_mutex_unlock (&mutex);
 
     int recv_err = recv_file(client_socket_fd,buffer,m.get_reciever(), file_name);
     if(recv_err == 0)
     {
+      //if everythings ok, save the message
       save_message(to_string(now),m);
       char response[] = "OK\n\0";
       writen(client_socket_fd,response,strlen(response));
