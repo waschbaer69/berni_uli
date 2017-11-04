@@ -12,24 +12,22 @@ using namespace std;
 
 class server{
 public:
-    server(int port, std::string directory_path);
+    server(int port,struct sockaddr_in addr, std::string directory_path);
     ~server();
 
     void wait_for_connection();
     void wait_for_request();
 private:
     /* attributes */
-    int server_socket_fd, client_socket_fd;
-    socklen_t addrlen;
-    struct sockaddr_in address, cliaddress;
+    int client_socket_fd;
     char buffer[BUF];
     int size;
     bool spool_path_found;
+    struct sockaddr_in cliaddress;
     string directory_path;
 
     /* methods */
     int error(const char* message);
-
     int receive_message(int socket,char* buffer);
     int recv_file(int sock, char* buffer, string user, string filename);
     string find_user(string id);

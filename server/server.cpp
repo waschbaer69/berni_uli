@@ -20,6 +20,7 @@
 #include <fstream>
 #include <chrono>
 #include <ldap.h>
+#include <thread>
 
 #define BUF 1024
 #define LDAP_HOST "ldap.technikum-wien.at"
@@ -38,54 +39,41 @@ else enter your credentials here*/
 using namespace std;
 
 /* constructor */
-server::server(int port,string directory_path_string){
+server::server(int client_socket,struct sockaddr_in addr, string directory_path_string){
+
+  client_socket_fd = client_socket;
+  cliaddress = addr;
 
   directory_path = directory_path_string;
-  if (directory_path.back() != '/') { // last character doesn't equal to '/'
+  if (directory_path.back() != '/')
+  { // last character doesn't equal to '/'
   directory_path += '/';
+  }
+
+  DIR* dir = opendir(directory_path.c_str());
+  if (dir)
+  {
+    /* Directory exists. */
+    closedir(dir);
+  }
+  else if (ENOENT == errno)
+  {
+    /* Directory does not exist. */
+    error("directory doesn\'t exist");
+    exit(EXIT_FAILURE);
+  }
+  else
+  {
+    /* opendir() failed for some other reason. */
+    error("directory couldn't be opened");
+    exit(EXIT_FAILURE);
+  }
+
+  spool_path_found = false;
 }
 
-DIR* dir = opendir(directory_path.c_str());
-if (dir)
+server::~server()
 {
-  /* Directory exists. */
-  closedir(dir);
-}
-else if (ENOENT == errno)
-{
-  /* Directory does not exist. */
-  error("directory doesn\'t exist");
-  exit(EXIT_FAILURE);
-}
-else
-{
-  /* opendir() failed for some other reason. */
-  error("directory couldn't be opened");
-  exit(EXIT_FAILURE);
-}
-
-//open the socket for a client to connect
-
-server_socket_fd = socket (AF_INET, SOCK_STREAM, 0);
-
-memset(&address,0,sizeof(address));
-address.sin_family = AF_INET;
-address.sin_addr.s_addr = INADDR_ANY;
-address.sin_port = htons (port);
-
-if (bind ( server_socket_fd, (struct sockaddr *) &address, sizeof (address)) != 0) {
-  error("bind error");
-}
-listen (server_socket_fd, 5);
-
-addrlen = sizeof (struct sockaddr_in);
-
-spool_path_found = false;
-
-}
-
-server::~server(){
-  close (server_socket_fd);
 }
 
 int server::error(const char* message){
@@ -99,27 +87,6 @@ int server::receive_message(int socket, char* recv_buffer)
   int size_msg = recv (socket, recv_buffer, BUF-1, 0);
   if(size_msg>0) recv_buffer[size_msg]='\0';
   return size_msg;
-}
-
-void server::wait_for_connection(){
-  //listen until a client connects to the socket
-
-  printf("Waiting for connections...\n");
-  client_socket_fd = accept ( server_socket_fd, (struct sockaddr *) &cliaddress, &addrlen );
-
-  if (client_socket_fd > 0){
-    printf ("Client connected from %s:%d...\n", inet_ntoa (cliaddress.sin_addr),ntohs(cliaddress.sin_port));
-
-    //send the client a welcome message
-
-    //send_message(client_socket_fd,"Welcome to myserver, Please enter your command:\n");
-    strcpy(buffer,"Welcome to myserver, Please enter your command:\n");
-    send(client_socket_fd, buffer, strlen(buffer),0);
-  }
-
-  //wait until the server recieves a request
-  wait_for_request();
-
 }
 
 void server::wait_for_request(){
@@ -165,7 +132,6 @@ void server::wait_for_request(){
       error("recv error");
     }
   }
-
   close (client_socket_fd);
 
 }
