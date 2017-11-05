@@ -30,8 +30,8 @@
 #define SCOPE LDAP_SCOPE_SUBTREE
 /* anonymous bind with user and pw NULL (you must be connected to fh-network),
 else enter your credentials here*/
-#define BIND_USER NULL //"uid=if16b502,ou=people,dc=technikum-wien,dc=at"
-#define BIND_PW NULL // "pwd"
+#define BIND_USER NULL//"uid=if16b502,ou=people,dc=technikum-wien,dc=at"
+#define BIND_PW NULL //"pwd"
 
 #include "server.h"
 #include "../message/message.h"
@@ -44,6 +44,7 @@ server::server(int client_socket,struct sockaddr_in addr, string directory_path_
 
   client_socket_fd = client_socket;
   cliaddress = addr;
+  isLoggedIn = 0;
 
   //pthread_mutex_init (&mutex, NULL);
 
@@ -100,19 +101,19 @@ void server::wait_for_request(){
     {
       server_login();
     }
-    if(strncmp (buffer, "SEND", 4)  == 0)
+    if((strncmp (buffer, "SEND", 4)  == 0) && (isLoggedIn == 1))
     {
       server_send();
     }
-    if(strncmp (buffer, "LIST", 4)  == 0)
+    if((strncmp (buffer, "LIST", 4)  == 0) && (isLoggedIn == 1))
     {
       server_list();
     }
-    if(strncmp (buffer, "READ", 4)  == 0)
+    if((strncmp (buffer, "READ", 4)  == 0) && (isLoggedIn == 1))
     {
       server_read();
     }
-    if(strncmp (buffer, "DEL", 3)  == 0)
+    if((strncmp (buffer, "DEL", 3)  == 0) && (isLoggedIn == 1))
     {
       server_del();
     }
@@ -242,6 +243,7 @@ int server::login_user(string dn, string pwd)
   else
   {
     printf("User could be logged in\n");
+    isLoggedIn = 1; // set flag to true
   }
 
   ldap_unbind(ld);
@@ -260,8 +262,8 @@ void server::server_login()
   getline(strs,uid); //uid
   getline(strs,pwd); //pwd
 
-  printf("%s\n",uid.c_str());
-  printf("%s\n",pwd.c_str());
+  //printf("%s\n",uid.c_str());
+  //printf("%s\n",pwd.c_str());
   string dn = find_user(uid).c_str();
 
   if(dn.compare("ERR") != 0)
@@ -270,6 +272,8 @@ void server::server_login()
     int isValid = login_user(dn,pwd);
     if(isValid == 1)
     {
+      user_id = uid;
+      printf("%s", user_id.c_str());
       char response[] = "OK\n\0";
       writen(client_socket_fd,response,strlen(response));
     }

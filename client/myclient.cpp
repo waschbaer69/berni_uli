@@ -105,6 +105,8 @@ int main (int argc, char **argv) {
   int server_socket_fd;
   char buffer[BUF];
   struct sockaddr_in address;
+  int isLoggedIn = 0;
+  string user_id;
   int size;
 
   //check if necessary arguments are there
@@ -165,16 +167,21 @@ int main (int argc, char **argv) {
 
       /* get OK or ERR back */
       receive_message(server_socket_fd,response);
+      if(strcmp(response,"OK\n") == 0)
+      {
+        isLoggedIn = 1;
+        user_id = uid;
+      }
       printf("%s",response);
     }
-    else if(command == "SEND"){
+    else if((command == "SEND") && (isLoggedIn == 1)){
       //read the message
       string string_request,sender,rec,subject,content,attachement_str,str;
       string_request = "";
       content="";
       char request[1024];
-      printf("Sender: ");
-      getline(cin,sender);
+      //printf("Sender: ");
+      //getline(cin,sender);
       printf("Receiver: ");
       getline(cin,rec);
       printf("Subject: ");
@@ -187,7 +194,7 @@ int main (int argc, char **argv) {
       }
       printf("Path to Attachement (optional): ");
       getline(cin,attachement_str);
-      string_request = "SEND\n"+sender+"\n"+rec+"\n"+subject+"\n"+content+".\n"+attachement_str;
+      string_request = "SEND\n"+user_id+"\n"+rec+"\n"+subject+"\n"+content+".\n"+attachement_str;
 
       //send the message to the server
       //strcpy(request, string_request.c_str());
@@ -205,14 +212,14 @@ int main (int argc, char **argv) {
       receive_message(server_socket_fd,response);
       printf("%s",response);
     }
-    else if (command == "LIST"){
+    else if ((command == "LIST") && (isLoggedIn == 1)){
 
       //read the username
       string string_request;
       char request[1024];
-      printf("Username: ");
-      getline(cin,string_request);
-      string_request = "LIST\n"+string_request;
+      //printf("Username: ");
+      //getline(cin,string_request);
+      string_request = "LIST\n"+user_id;
 
       //send username to the server
       //strcpy(request, string_request.c_str());
@@ -226,16 +233,16 @@ int main (int argc, char **argv) {
       printf("%s",response);
 
     }
-    else if(command == "READ"){
+    else if((command == "READ") && (isLoggedIn == 1)){
 
       //read the username and number
       string string_request,num;
       char request[1024];
-      printf("Username: ");
-      getline(cin,string_request);
+      //printf("Username: ");
+      //getline(cin,string_request);
       printf("Message-Number: ");
       getline(cin,num);
-      string_request = "READ\n"+string_request+"\n"+num;
+      string_request = "READ\n"+user_id+"\n"+num;
 
       //send username to the server
       //strcpy(request, string_request.c_str());
@@ -249,18 +256,18 @@ int main (int argc, char **argv) {
       printf("%s",response);
 
     }
-    else if(command == "DEL"){
+    else if((command == "DEL") && (isLoggedIn == 1)){
 
       //read the username and number
       string string_request,num;
       char request[1024];
 
 
-      printf("Username: ");
-      getline(cin,string_request);
+      //printf("Username: ");
+      //getline(cin,string_request);
       printf("Message-Number: ");
       getline(cin,num);
-      string_request = "DEL\n"+string_request+"\n"+num;
+      string_request = "DEL\n"+user_id+"\n"+num;
 
       //send username to the server
       //strcpy(request, string_request.c_str());
@@ -288,7 +295,7 @@ int main (int argc, char **argv) {
     }
     else {
 
-      cout << "Invalid Input\n";
+      cout << "Invalid Input, you might have to login to use SEND,LIST,DEL and READ.\n";
 
     }
 

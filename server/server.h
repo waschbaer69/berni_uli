@@ -25,6 +25,9 @@ private:
     bool spool_path_found;
     struct sockaddr_in cliaddress;
     string directory_path;
+    string user_id;
+    int isLoggedIn = 0;
+
 
     /* methods */
     int error(const char* message);
