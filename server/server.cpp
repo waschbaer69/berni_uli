@@ -25,13 +25,14 @@
 #define BUF 1024
 #define LDAP_HOST "ldap.technikum-wien.at"
 #define LDAP_PORT 389
-#define FILTER "(uid=if16b502)"
+#define FILTER "(uid=if16b093)"
 #define SEARCHBASE "dc=technikum-wien,dc=at"
 #define SCOPE LDAP_SCOPE_SUBTREE
 /* anonymous bind with user and pw NULL (you must be connected to fh-network),
 else enter your credentials here*/
 #define BIND_USER NULL//"uid=if16b502,ou=people,dc=technikum-wien,dc=at"
 #define BIND_PW NULL //"pwd"
+#define BANTIME 30 //bantime in minutes
 
 #include "server.h"
 #include "../message/message.h"
@@ -99,7 +100,10 @@ void server::wait_for_request(){
     size = receive_message(client_socket_fd,buffer);
     if(strncmp (buffer,"LOGIN", 5) == 0)
     {
-      server_login();
+        server_login();
+        if(failedLogins > 2) {
+          break;
+        }
     }
     if((strncmp (buffer, "SEND", 4)  == 0) && (isLoggedIn == 1))
     {
@@ -137,7 +141,7 @@ void server::wait_for_request(){
     }
   }
   close (client_socket_fd);
-
+  printf("Closed Socket\n");
 }
 
 string server::find_user(string id)
@@ -239,6 +243,7 @@ int server::login_user(string dn, string pwd)
   {
     fprintf(stderr,"LDAP error: %s\n",ldap_err2string(rc));
     success = 0;
+    failedLogins++;
   }
   else
   {
@@ -278,8 +283,24 @@ void server::server_login()
       writen(client_socket_fd,response,strlen(response));
     }
     else
-    {
-      char response[] = "ERR\n\0";
+    { //wrong credentials
+      //if wrong 3rd time ban
+
+      char response[100] = "ERR\n\0";
+      if(failedLogins > 2) {
+        //notify of ban
+        sprintf(response, "ERR\nYour IP %s has been banned for %d minute(s)\n", inet_ntoa(cliaddress.sin_addr), BANTIME);
+        printf("%s", response);
+        //write to blacklist
+
+        unsigned long now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count() + BANTIME*60000;
+        char address[100];
+        sprintf(address, "%s", inet_ntoa(cliaddress.sin_addr));
+
+        ofstream outfile (directory_path+"/blacklist");
+        outfile << address << " " << to_string(now) << endl;
+        outfile.close();
+      }
       writen(client_socket_fd,response,strlen(response));
     }
   }
@@ -288,7 +309,6 @@ void server::server_login()
     char response[] = "ERR\n\0";
     writen(client_socket_fd,response,strlen(response));
   }
-
 }
 
 int server::recv_file(int client_socket, char* buffer, string user, string filename)

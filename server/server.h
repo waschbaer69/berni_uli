@@ -15,7 +15,6 @@ public:
     server(int port,struct sockaddr_in addr, std::string directory_path);
     ~server();
 
-    void wait_for_connection();
     void wait_for_request();
 private:
     /* attributes */
@@ -27,6 +26,7 @@ private:
     string directory_path;
     string user_id;
     int isLoggedIn = 0;
+    int failedLogins = 0;
 
 
     /* methods */
