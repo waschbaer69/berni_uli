@@ -30,7 +30,7 @@
 #define SCOPE LDAP_SCOPE_SUBTREE
 /* anonymous bind with user and pw NULL (you must be connected to fh-network),
 else enter your credentials here*/
-#define BIND_USER NULL//"uid=if16b502,ou=people,dc=technikum-wien,dc=at"
+#define BIND_USER NULL //"uid=if16b502,ou=people,dc=technikum-wien,dc=at"
 #define BIND_PW NULL //"pwd"
 #define BANTIME 30 //bantime in minutes
 
@@ -322,9 +322,13 @@ int server::recv_file(int client_socket, char* buffer, string user, string filen
   /* Receiving file size */
   recv(client_socket, buffer, BUF, 0);
   file_size = atoi(buffer);
-  if(file_size <= 0)
+  if(file_size < 0)
   {
     recv_error = 1;
+  }
+  else if(file_size == 0)
+  {
+    recv_error = -1;
   }
 
   if(file_size > 0) // only if file is valid, recv message
@@ -358,8 +362,6 @@ int server::recv_file(int client_socket, char* buffer, string user, string filen
 
     fclose(received_file); // segmentation fault verhindern
   }
-
-
   return recv_error;
 }
 
@@ -392,14 +394,16 @@ void server::server_send(){
       printf("This thread doesn't own the lock\n");
       /// Fail!  This thread doesn't own the lock.  Do something else...
     } */
-    fprintf(stdout, "thread:%ld\n",pthread_self());
+    //fprintf(stdout, "thread:%ld\n",pthread_self());
     long long int now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
     string file_name = to_string(now)+"_"+"atm"+"_"+m.get_attachement();
     //pthread_mutex_unlock (&mutex);
 
     int recv_err = recv_file(client_socket_fd,buffer,m.get_reciever(), file_name);
-    if(recv_err == 0)
+    if(recv_err <= 0)
     {
+      if(recv_err == -1) m.set_attachement("");
+      else m.set_attachement(file_name);
       //if everythings ok, save the message
       save_message(to_string(now),m);
       char response[] = "OK\n\0";
@@ -532,12 +536,13 @@ void server::server_del(){
   }
   else{
     //see if there is an acutal number entered
+    int error = 0;
     unsigned int number = 1337;
     try{
       number = stoi(string_number);
     }
     catch (const exception& e) {
-      name = "someusernamethatcanneverbetankenandthereforeproducesanerror"; //stupid but it works
+      error = 1;
     }
 
     //get a vector with all messages from the user
@@ -545,13 +550,23 @@ void server::server_del(){
     vector<message> v = get_spool(string_path);
 
     //if the user doesnt exist, return ERR
-    if(spool_path_found && v.size() >= number && number > 0){
+    if(spool_path_found && v.size() >= number && number > 0 && error == 0){
 
       //get the filename of the message and remove it
       string string_fn = v[number-1].get_filename();
+      string string_att = string_path + "/" + v[number-1].get_attachement();
+      //printf("Hier steht filename: %s\n",string_fn.c_str());
+      //printf("Hier steht attachement: %s\n",string_att.c_str());
       char fn[string_fn.size()];
       strcpy(fn, string_fn.c_str());
       remove(fn);
+
+      if((v[number-1].get_attachement().size()) >= 3) //minimal filename "a.c"
+      {
+      char att[string_att.size()];
+      strcpy(att, string_att.c_str());
+      remove(att);
+      }
 
       char response[] = "OK\n\0";
       writen(client_socket_fd,response,strlen(response));
@@ -592,6 +607,7 @@ void server::save_message(string now,message m){
 
   outfile << "Sender:" << m.get_sender() << endl;
   outfile << "Receiver:" << m.get_reciever() << endl;
+  outfile << "Attachement:" << m.get_attachement() << endl;
   outfile << "Subject:" << m.get_subject() << endl;
   outfile << "Message Content:\n" << m.get_content();
 

@@ -73,7 +73,15 @@ void send_file(int sock, char *file_name)
   }
   else
   {
-    sprintf(file_size, "%d", (int) 0);
+    if(strlen(file_name) == 0)
+    {
+      sprintf(file_size, "%d", (int) 0);
+    }
+    else
+    {
+      sprintf(file_size, "%d", (int) -1);
+    }
+
     fprintf(stdout, "File Size: \n%s bytes\n", file_size);
   }
 

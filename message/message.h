@@ -20,6 +20,7 @@ public:
     message(string messageSender, int file);
     ~message();
 
+    void set_attachement(string name);
     string get_attachement();
     string get_sender();
     string get_reciever();

@@ -47,10 +47,20 @@ message::message(string filename, int file) {
 
   ifstream in_file (filename);
 
+
   getline(in_file,str);
   sender = str.substr(7);
+
   getline(in_file,str);
   reciever = str.substr(9);
+
+  getline(in_file,str);
+  if( str.length() > 12)
+  {
+    attachement = str.substr(12);
+  }
+  else attachement = "";
+
   getline(in_file,str);
   subject = str.substr(8);
 
@@ -67,6 +77,13 @@ message::message(string filename, int file) {
 
 message::~message() {
 }
+
+void message::set_attachement(string name)
+{
+  attachement = name;
+}
+
+
 //some getters:
 string message::get_attachement() {
   if(attachement.find("/")!= std::string::npos) // if string contains filepath
