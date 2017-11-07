@@ -31,7 +31,7 @@
 /* anonymous bind with user and pw NULL (you must be connected to fh-network),
 else enter your credentials here*/
 #define BIND_USER NULL
-//#define BIND_USER "uid=if16b502,ou=people,dc=technikum-wien,dc=at"
+//#define BIND_USER "uid=if16b093,ou=people,dc=technikum-wien,dc=at"
 #define BIND_PW NULL
 //#define BIND_PW "pwd"
 #define BANTIME 30 //bantime in minutes
@@ -43,12 +43,12 @@ using namespace std;
 //pthread_mutex_t mutex;
 
 /* constructor */
-server::server(int client_socket,struct sockaddr_in addr, string directory_path_string,pthread_mutex_t mutex_struct){
+server::server(int client_socket,struct sockaddr_in addr, string directory_path_string,pthread_mutex_t mutex){
 
   client_socket_fd = client_socket;
   cliaddress = addr;
   isLoggedIn = 0;
-  mutex = mutex_struct;
+  mutex = mutex;
 
   //pthread_mutex_init (&mutex, NULL);
 

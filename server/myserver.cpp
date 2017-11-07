@@ -9,6 +9,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <iostream>
+#include <functional>
 #include <fstream>
 #include <chrono>
 
@@ -20,7 +21,7 @@ struct arg_struct {
     int socket;
     struct sockaddr_in addr;
     char* directory;
-    pthread_mutex_t mutex_struct;
+    pthread_mutex_t mutex;
 };
 
 void * threading_socket (void *arguments)
@@ -31,7 +32,7 @@ void * threading_socket (void *arguments)
   pthread_detach (pthread_self ());
 
   //starts the server, initializes object from class server.cpp
-  server *c = new server(args->socket, args->addr, args->directory, args->mutex_struct);
+  server *c = new server(args->socket, args->addr, args->directory, args->mutex);
   //waiting for requests
   c->wait_for_request();
   delete c;
@@ -133,7 +134,7 @@ int main (int argc, char **argv) {
         args.socket = client_socket;
         args.addr = cliaddress;
         args.directory = argv[2];
-        args.mutex_struct = mutex;
+        args.mutex = std::ref(mutex);
 
         pthread_create(&th,NULL,threading_socket,(void *)&args);
       } else {
