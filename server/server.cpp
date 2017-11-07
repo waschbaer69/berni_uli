@@ -398,6 +398,8 @@ void server::server_send(){
       /// Fail!  This thread doesn't own the lock.  Do something else...
     } */
     //fprintf(stdout, "thread:%ld\n",pthread_self());
+    char response[] = "Got Data\n\0";
+    writen(client_socket_fd,response,strlen(response));
 
     pthread_mutex_lock (&mutex);
     long long int now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();

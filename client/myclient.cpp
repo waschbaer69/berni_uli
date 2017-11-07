@@ -208,9 +208,12 @@ int main (int argc, char **argv) {
       //strcpy(request, string_request.c_str());
       //send(server_socket_fd, request, strlen(request), 0);
       send_message(server_socket_fd,request,string_request.c_str());
+      receive_message(server_socket_fd,response); // server receives data
+      printf("%s",response);
 
       char attachement[BUF];
       strcpy(attachement,attachement_str.c_str());
+
       /* send file here */
       send_file(server_socket_fd,attachement);
 
