@@ -30,8 +30,10 @@
 #define SCOPE LDAP_SCOPE_SUBTREE
 /* anonymous bind with user and pw NULL (you must be connected to fh-network),
 else enter your credentials here*/
-#define BIND_USER NULL //"uid=if16b502,ou=people,dc=technikum-wien,dc=at"
-#define BIND_PW NULL //"pwd"
+#define BIND_USER NULL
+//#define BIND_USER "uid=if16b502,ou=people,dc=technikum-wien,dc=at"
+#define BIND_PW NULL
+//#define BIND_PW "pwd"
 #define BANTIME 30 //bantime in minutes
 
 #include "server.h"
@@ -41,11 +43,12 @@ using namespace std;
 //pthread_mutex_t mutex;
 
 /* constructor */
-server::server(int client_socket,struct sockaddr_in addr, string directory_path_string){
+server::server(int client_socket,struct sockaddr_in addr, string directory_path_string,pthread_mutex_t mutex_struct){
 
   client_socket_fd = client_socket;
   cliaddress = addr;
   isLoggedIn = 0;
+  mutex = mutex_struct;
 
   //pthread_mutex_init (&mutex, NULL);
 
@@ -395,9 +398,11 @@ void server::server_send(){
       /// Fail!  This thread doesn't own the lock.  Do something else...
     } */
     //fprintf(stdout, "thread:%ld\n",pthread_self());
+
+    pthread_mutex_lock (&mutex);
     long long int now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
     string file_name = to_string(now)+"_"+"atm"+"_"+m.get_attachement();
-    //pthread_mutex_unlock (&mutex);
+    pthread_mutex_unlock (&mutex);
 
     int recv_err = recv_file(client_socket_fd,buffer,m.get_reciever(), file_name);
     if(recv_err <= 0)
@@ -552,6 +557,7 @@ void server::server_del(){
     //if the user doesnt exist, return ERR
     if(spool_path_found && v.size() >= number && number > 0 && error == 0){
 
+      pthread_mutex_lock (&mutex);
       //get the filename of the message and remove it
       string string_fn = v[number-1].get_filename();
       string string_att = string_path + "/" + v[number-1].get_attachement();
@@ -567,6 +573,7 @@ void server::server_del(){
       strcpy(att, string_att.c_str());
       remove(att);
       }
+      pthread_mutex_unlock (&mutex);
 
       char response[] = "OK\n\0";
       writen(client_socket_fd,response,strlen(response));
@@ -628,6 +635,7 @@ vector<message> server::get_spool(string path_to_userdir){
   DIR *dir;
   struct dirent *ent;
   //if there's no such directory, set a boolean to false to produce an error in the method that called get_spool()
+  pthread_mutex_lock (&mutex);
   if ((dir = opendir (path)) != NULL){
     spool_path_found = true;
     while ((ent = readdir (dir)) != NULL) {
@@ -650,6 +658,7 @@ vector<message> server::get_spool(string path_to_userdir){
     spool_path_found = false;
     //error("directory not found");
   }
+  pthread_mutex_unlock (&mutex);
 
   return spool;
 

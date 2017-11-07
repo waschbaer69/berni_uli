@@ -12,7 +12,7 @@ using namespace std;
 
 class server{
 public:
-    server(int port,struct sockaddr_in addr, std::string directory_path);
+    server(int port,struct sockaddr_in addr, std::string directory_path,pthread_mutex_t mutex_struct);
     ~server();
 
     void wait_for_request();
@@ -27,6 +27,7 @@ private:
     string user_id;
     int isLoggedIn = 0;
     int failedLogins = 0;
+    pthread_mutex_t mutex;
 
 
     /* methods */
