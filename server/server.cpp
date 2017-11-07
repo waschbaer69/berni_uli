@@ -246,7 +246,6 @@ int server::login_user(string dn, string pwd)
   {
     fprintf(stderr,"LDAP error: %s\n",ldap_err2string(rc));
     success = 0;
-    failedLogins++;
   }
   else
   {
@@ -286,8 +285,9 @@ void server::server_login()
       writen(client_socket_fd,response,strlen(response));
     }
     else
-    { //wrong credentials
+    { //wrong password
       //if wrong 3rd time ban
+      failedLogins++;
 
       char response[100] = "ERR\n\0";
       if(failedLogins > 2) {
@@ -296,20 +296,45 @@ void server::server_login()
         printf("%s", response);
         //write to blacklist
 
+        pthread_mutex_lock(&mutex);
         unsigned long now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count() + BANTIME*60000;
         char address[100];
         sprintf(address, "%s", inet_ntoa(cliaddress.sin_addr));
 
+
         ofstream outfile (directory_path+"/blacklist");
         outfile << address << " " << to_string(now) << endl;
         outfile.close();
+
+        pthread_mutex_unlock(&mutex);
       }
       writen(client_socket_fd,response,strlen(response));
     }
   }
   else
   {
-    char response[] = "ERR\n\0";
+    //username not found
+    failedLogins++;
+
+    char response[100] = "ERR\n\0";
+    if(failedLogins > 2) {
+      //notify of ban
+      sprintf(response, "ERR\nYour IP %s has been banned for %d minute(s)\n", inet_ntoa(cliaddress.sin_addr), BANTIME);
+      printf("%s", response);
+      //write to blacklist
+
+      pthread_mutex_lock(&mutex);
+      unsigned long now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count() + BANTIME*60000;
+      char address[100];
+      sprintf(address, "%s", inet_ntoa(cliaddress.sin_addr));
+
+
+      ofstream outfile (directory_path+"/blacklist");
+      outfile << address << " " << to_string(now) << endl;
+      outfile.close();
+
+      pthread_mutex_unlock(&mutex);
+    }
     writen(client_socket_fd,response,strlen(response));
   }
 }

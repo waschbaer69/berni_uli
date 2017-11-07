@@ -77,6 +77,7 @@ int main (int argc, char **argv) {
       printf ("Client connected from %s:%d...\n", inet_ntoa (cliaddress.sin_addr),ntohs(cliaddress.sin_port));
 
       //check if banned or not
+      int banned = 0;
       string filepath(argv[2]);
       ifstream inFile(filepath+"/blacklist");
 
@@ -84,43 +85,42 @@ int main (int argc, char **argv) {
 
       //check if exists
       if(!inFile) {
-        perror("Couldn't open blacklist");
-        exit(EXIT_FAILURE);
+        perror("Couldn't open blacklist (file does not exist)");
       }
+      else {
+        //current time
+        unsigned long now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+        unsigned long timestamp;
+        string ip;
 
-      //current time
-      unsigned long now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
-      unsigned long timestamp;
-      string ip;
-      int banned = 0;
+        //read until no more lines
+        while(inFile >> ip) {
+          inFile >> timestamp;
+          cout << ip << " " << to_string(timestamp) << endl;
 
-      //read until no more lines
-      while(inFile >> ip) {
-        inFile >> timestamp;
-        cout << ip << " " << to_string(timestamp) << endl;
-
-        if(strcmp(ip.c_str() , inet_ntoa(cliaddress.sin_addr)) == 0) {
-          //if connection is in there check timestamp
-          if(timestamp > now) {
-            //if banned
-            outFile << ip << " " << timestamp << endl;
-            banned = 1;
+          if(strcmp(ip.c_str() , inet_ntoa(cliaddress.sin_addr)) == 0) {
+            //if connection is in there check timestamp
+            if(timestamp > now) {
+              //if banned
+              outFile << ip << " " << timestamp << endl;
+              banned = 1;
+            } else {
+              //remove line from file (don't write to new file)
+              //unbanned
+              cout << "Unbanning " << ip << endl;
+              banned = 0;
+            }
           } else {
-            //remove line from file (don't write to new file)
-            //unbanned
-            cout << "Unbanning " << ip << endl;
-            banned = 0;
+            outFile << ip << " " << timestamp << endl;
           }
-        } else {
-          outFile << ip << " " << timestamp << endl;
         }
+
+        inFile.close();
+        outFile.close();
+
+        remove( (filepath+"/blacklist").c_str() );
+        rename( (filepath+"/blacklist_temp").c_str(), (filepath+"/blacklist").c_str() );
       }
-
-      inFile.close();
-      outFile.close();
-
-      remove( (filepath+"/blacklist").c_str() );
-      rename( (filepath+"/blacklist_temp").c_str(), (filepath+"/blacklist").c_str() );
 
       if(banned == 0) {
         //send the client a welcome message
@@ -141,6 +141,7 @@ int main (int argc, char **argv) {
         strcpy(buffer,"You are still IP banned\n");
         send(client_socket, buffer, strlen(buffer),0);
         close(client_socket);
+        printf("Closed Socket\n");
       }
     }
   }
